@@ -1,0 +1,47 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from xgboost import XGBClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the dataset
+df = pd.read_csv('US_Accidents_Dec21_updated.csv')  # Adjust path to your dataset
+
+# Preprocessing
+df = df[['Severity', 'Start_Lat', 'Start_Lng', 'Temperature(F)', 'Humidity(%)', 
+         'Pressure(in)', 'Visibility(mi)', 'Wind_Speed(mph)', 'Weather_Condition']]
+
+df.dropna(inplace=True)
+
+# Encode categorical features
+le = LabelEncoder()
+df['Weather_Condition'] = le.fit_transform(df['Weather_Condition'])
+
+# Feature/Target split
+X = df.drop('Severity', axis=1)
+y = df['Severity']  # Labels: 1 to 4
+
+# Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Model training
+model = XGBClassifier(use_label_encoder=False, eval_metric='mlogloss')
+model.fit(X_train, y_train)
+
+# Prediction
+y_pred = model.predict(X_test)
+
+# Evaluation
+print("Classification Report:")
+print(classification_report(y_test, y_pred))
+
+# Confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.title("Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
